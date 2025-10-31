@@ -35,7 +35,7 @@ st.markdown("""
     .main-header {
         font-size: 3rem;
         font-weight: bold;
-        color: #ffffff;
+        color: #ffffff !important;
         text-align: center;
         padding: 1rem;
         background: linear-gradient(90deg, #1e3c72 0%, #2a5298 100%);
@@ -971,3 +971,4 @@ st.markdown("""
     <p> SlothShield v1.0 | Powered by Machine Learning |  2025</p>
 </div>
 """, unsafe_allow_html=True)
+
