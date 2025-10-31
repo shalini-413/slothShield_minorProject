@@ -787,28 +787,20 @@ if page == " Dashboard":
                 fig = go.Figure(data=[go.Pie(
                     labels=['Benign', 'Malicious'],
                     values=[report['dataset']['benign'], report['dataset']['malicious']],
+                    hole=.3,
+                    marker_colors=['#2ecc71', '#e74c3c']
+                )])
+                fig.update_layout(
+                    title="Historical Traffic Distribution",
+                    height=400
+                )
+                st.plotly_chart(fig, use_container_width=True)
         
         st.markdown("---")
         
-        # Charts
-        col1, col2 = st.columns(2)
-        
+        # Model performance chart
+        col1 = st.columns(1)[0]
         with col1:
-            # Traffic distribution
-            fig = go.Figure(data=[go.Pie(
-                labels=['Benign', 'Malicious'],
-                values=[report['dataset']['benign'], report['dataset']['malicious']],
-                hole=.3,
-                marker_colors=['#2ecc71', '#e74c3c']
-            )])
-            fig.update_layout(
-                title="Traffic Distribution",
-                height=400
-            )
-            st.plotly_chart(fig, use_container_width=True)
-        
-        with col2:
-            # Model performance
             metrics_df = pd.DataFrame({
                 'Metric': ['Accuracy', 'ROC-AUC', 'CV Score'],
                 'Score': [
@@ -817,16 +809,13 @@ if page == " Dashboard":
                     report['metrics']['cv_score'] * 100
                 ]
             })
-            
             fig = px.bar(metrics_df, x='Metric', y='Score',
                         title='Model Performance Metrics',
                         color='Score',
-                        color_continuous_scale='Greens')
+                        color_continuous_scale='Greens',
+                        barmode='group')
             fig.update_layout(height=400)
             st.plotly_chart(fig, use_container_width=True)
-    
-    else:
-        st.info(" No analysis data available yet. Upload a file to start detection!")
 
 elif page == " Upload & Detect":
     st.header("Upload Network Traffic for Analysis")
@@ -1102,46 +1091,45 @@ elif page == " Analytics":
             df = pd.read_csv(f'results/{latest_file}')
             
             st.subheader(" Historical Traffic Patterns")
-        
-        # Time series if available
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            # Duration distribution
-            fig = px.histogram(df, x='duration', color='status',
-                             title='Connection Duration Distribution',
-                             color_discrete_map={'BENIGN': '#2ecc71', 'ATTACK': '#e74c3c'})
-            st.plotly_chart(fig, use_container_width=True)
-        
-        with col2:
-            # Bytes per second
-            fig = px.box(df, x='status', y='bytes_per_sec',
-                        title='Bytes per Second by Traffic Type',
-                        color='status',
-                        color_discrete_map={'BENIGN': '#2ecc71', 'ATTACK': '#e74c3c'})
-            st.plotly_chart(fig, use_container_width=True)
-        
-        # Feature importance
-        st.subheader(" Key Detection Features")
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            # Incomplete requests
-            fig = px.histogram(df, x='incomplete_requests', color='status',
-                             title='Incomplete HTTP Requests',
-                             color_discrete_map={'BENIGN': '#2ecc71', 'ATTACK': '#e74c3c'})
-            st.plotly_chart(fig, use_container_width=True)
-        
-        with col2:
-            # Keep-alive count
-            fig = px.histogram(df, x='keepalive_count', color='status',
-                             title='Keep-Alive Count',
-                             color_discrete_map={'BENIGN': '#2ecc71', 'ATTACK': '#e74c3c'})
-            st.plotly_chart(fig, use_container_width=True)
-        
-    else:
-        st.info("No detection reports available. Upload a file to generate analytics.")
+            
+            # Time series if available
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                # Duration distribution
+                fig = px.histogram(df, x='duration', color='status',
+                                 title='Connection Duration Distribution',
+                                 color_discrete_map={'BENIGN': '#2ecc71', 'ATTACK': '#e74c3c'})
+                st.plotly_chart(fig, use_container_width=True)
+            
+            with col2:
+                # Bytes per second
+                fig = px.box(df, x='status', y='bytes_per_sec',
+                            title='Bytes per Second by Traffic Type',
+                            color='status',
+                            color_discrete_map={'BENIGN': '#2ecc71', 'ATTACK': '#e74c3c'})
+                st.plotly_chart(fig, use_container_width=True)
+            
+            # Feature importance
+            st.subheader(" Key Detection Features")
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                # Incomplete requests
+                fig = px.histogram(df, x='incomplete_requests', color='status',
+                                 title='Incomplete HTTP Requests',
+                                 color_discrete_map={'BENIGN': '#2ecc71', 'ATTACK': '#e74c3c'})
+                st.plotly_chart(fig, use_container_width=True)
+            
+            with col2:
+                # Keep-alive count
+                fig = px.histogram(df, x='keepalive_count', color='status',
+                                 title='Keep-Alive Count',
+                                 color_discrete_map={'BENIGN': '#2ecc71', 'ATTACK': '#e74c3c'})
+                st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.info(" No historical detection data available. Upload a file to start detection!")
 
 elif page == " Model Retraining":
     st.header("Continuous Model Improvement")
