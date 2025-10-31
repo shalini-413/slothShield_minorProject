@@ -21,6 +21,14 @@ import warnings
 
 warnings.filterwarnings('ignore')
 
+# Initialize session state for real-time data
+if 'current_results' not in st.session_state:
+    st.session_state.current_results = None
+if 'current_filename' not in st.session_state:
+    st.session_state.current_filename = None
+if 'last_upload_time' not in st.session_state:
+    st.session_state.last_upload_time = None
+
 # Page configuration
 st.set_page_config(
     page_title="SlothShield - Slowloris Detection",
@@ -35,12 +43,12 @@ st.markdown("""
     .main-header {
         font-size: 3rem;
         font-weight: bold;
-        color: #ffffff;
+        color: #ffffff !important;
         text-align: center;
-        padding: 1rem;
+        padding: 0.5rem;
         background: linear-gradient(90deg, #1e3c72 0%, #2a5298 100%);
         border-radius: 10px;
-        margin-bottom: 2rem;
+        margin-bottom: 3rem;
     }
     .metric-card {
         background-color: #f0f2f6;
@@ -63,6 +71,19 @@ st.markdown("""
         border-left: 5px solid #2ecc71;
         margin: 1rem 0;
         color: black;
+    }
+    /* Remove link pin icon and add hover effects */
+    a[data-testid="stAppViewBlockContainer"] {
+        text-decoration: none !important;
+    }
+    a:hover {
+        text-decoration: none !important;
+        opacity: 0.8;
+        transition: opacity 0.3s ease;
+    }
+    .element-container:hover {
+        transform: translateY(-2px);
+        transition: transform 0.2s ease;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -598,6 +619,24 @@ with st.sidebar:
     ])
     
     st.markdown("---")
+    
+    # Current upload status
+    if st.session_state.current_results is not None:
+        st.markdown("### Current Upload")
+        st.success(f"📁 {st.session_state.current_filename}")
+        if st.session_state.last_upload_time:
+            st.caption(f"⏰ {st.session_state.last_upload_time}")
+        
+        if st.button("🗑️ Clear Current Data", help="Remove current upload data"):
+            st.session_state.current_results = None
+            st.session_state.current_filename = None
+            st.session_state.last_upload_time = None
+            st.rerun()
+    else:
+        st.markdown("### Current Upload")
+        st.info("No data uploaded")
+    
+    st.markdown("---")
     st.markdown("### System Status")
     st.success(" Model Loaded")
     st.info(f" {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
@@ -606,42 +645,148 @@ with st.sidebar:
 if page == " Dashboard":
     st.header("Real-Time Network Traffic Monitoring")
     
-    # Load existing results if available
-    if os.path.exists('results/detailed_report.json'):
-        with open('results/detailed_report.json') as f:
-            report = json.load(f)
+    # Show current upload stats if available
+    if st.session_state.current_results is not None:
+        # Real-time stats from current upload
+        results = st.session_state.current_results
+        total = len(results)
+        attacks = (results['prediction'] == 1).sum()
+        benign = total - attacks
         
-        # Metrics
+        st.success(f"📊 Live stats from: {st.session_state.current_filename}")
+        if st.session_state.last_upload_time:
+            st.info(f"⏰ Last uploaded: {st.session_state.last_upload_time}")
+        
+        # Real-time metrics
         col1, col2, col3, col4 = st.columns(4)
         
         with col1:
             st.metric(
                 label="Total Connections",
-                value=f"{report['dataset']['connections']:,}",
-                delta="Analyzed"
+                value=f"{total:,}",
+                delta="Current Upload"
             )
         
         with col2:
             st.metric(
                 label="Benign Traffic",
-                value=f"{report['dataset']['benign']:,}",
-                delta=f"{report['dataset']['benign']/report['dataset']['connections']*100:.1f}%"
+                value=f"{benign:,}",
+                delta=f"{benign/total*100:.1f}%"
             )
         
         with col3:
             st.metric(
                 label="Attacks Detected",
-                value=f"{report['dataset']['malicious']:,}",
-                delta=f"{report['dataset']['malicious']/report['dataset']['connections']*100:.1f}%",
+                value=f"{attacks:,}",
+                delta=f"{attacks/total*100:.1f}%",
                 delta_color="inverse"
             )
         
         with col4:
+            attack_rate = attacks/total*100
+            if attack_rate == 0:
+                status = "Safe"
+                color = "normal"
+            elif attack_rate < 5:
+                status = "Low Risk"
+                color = "normal"
+            elif attack_rate < 20:
+                status = "Medium Risk"
+                color = "inverse"
+            else:
+                status = "High Risk"
+                color = "inverse"
+            
             st.metric(
-                label="Model Accuracy",
-                value=f"{report['metrics']['accuracy']*100:.1f}%",
-                delta="Excellent"
+                label="Risk Level",
+                value=status,
+                delta=f"{attack_rate:.1f}%",
+                delta_color=color
             )
+        
+        st.markdown("---")
+        
+        # Real-time charts from current data
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            # Traffic distribution
+            fig = go.Figure(data=[go.Pie(
+                labels=['Benign', 'Malicious'],
+                values=[benign, attacks],
+                hole=.4,
+                marker_colors=['#2ecc71', '#e74c3c'],
+                textinfo='label+percent+value'
+            )])
+            fig.update_layout(
+                title="Current Upload - Traffic Distribution",
+                height=400
+            )
+            st.plotly_chart(fig, use_container_width=True)
+        
+        with col2:
+            # Confidence distribution
+            fig = px.histogram(
+                results, 
+                x='confidence', 
+                color='status',
+                title="Detection Confidence Distribution",
+                color_discrete_map={'BENIGN': '#2ecc71', 'ATTACK': '#e74c3c'},
+                nbins=20
+            )
+            fig.update_layout(height=400)
+            st.plotly_chart(fig, use_container_width=True)
+    
+    else:
+        # Fallback to existing results if no current upload
+        if os.path.exists('results/detailed_report.json'):
+            with open('results/detailed_report.json') as f:
+                report = json.load(f)
+            
+            st.info("📊 Showing historical data (no current upload)")
+            
+            # Historical metrics
+            col1, col2, col3, col4 = st.columns(4)
+            
+            with col1:
+                st.metric(
+                    label="Total Connections",
+                    value=f"{report['dataset']['connections']:,}",
+                    delta="Historical"
+                )
+            
+            with col2:
+                st.metric(
+                    label="Benign Traffic",
+                    value=f"{report['dataset']['benign']:,}",
+                    delta=f"{report['dataset']['benign']/report['dataset']['connections']*100:.1f}%"
+                )
+            
+            with col3:
+                st.metric(
+                    label="Attacks Detected",
+                    value=f"{report['dataset']['malicious']:,}",
+                    delta=f"{report['dataset']['malicious']/report['dataset']['connections']*100:.1f}%",
+                    delta_color="inverse"
+                )
+            
+            with col4:
+                st.metric(
+                    label="Model Accuracy",
+                    value=f"{report['metrics']['accuracy']*100:.1f}%",
+                    delta="Excellent"
+                )
+            
+            st.markdown("---")
+            
+            # Historical charts
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                # Traffic distribution
+                fig = go.Figure(data=[go.Pie(
+                    labels=['Benign', 'Malicious'],
+                    values=[report['dataset']['benign'], report['dataset']['malicious']],
         
         st.markdown("---")
         
@@ -726,6 +871,11 @@ elif page == " Upload & Detect":
                     results = shield.detect_attacks(df)
                     
                     if results is not None:
+                        # Update session state with current results
+                        st.session_state.current_results = results
+                        st.session_state.current_filename = uploaded_file.name
+                        st.session_state.last_upload_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                        
                         # Summary
                         total = len(results)
                         attacks = (results['prediction'] == 1).sum()
@@ -833,17 +983,125 @@ elif page == " Upload & Detect":
 elif page == " Analytics":
     st.header("Traffic Analytics & Insights")
     
-    # Check for saved detections
-    detection_files = [f for f in os.listdir('results') if f.startswith('detection_')]
+    # Show current upload analytics if available
+    if st.session_state.current_results is not None:
+        df = st.session_state.current_results
+        
+        st.success(f"📊 Real-time analytics from: {st.session_state.current_filename}")
+        if st.session_state.last_upload_time:
+            st.info(f"⏰ Analysis time: {st.session_state.last_upload_time}")
+        
+        st.subheader(" Current Upload - Traffic Patterns")
+        
+        # Real-time analytics
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            # Duration distribution
+            fig = px.histogram(df, x='duration', color='status',
+                             title='Connection Duration Distribution',
+                             color_discrete_map={'BENIGN': '#2ecc71', 'ATTACK': '#e74c3c'})
+            st.plotly_chart(fig, use_container_width=True)
+        
+        with col2:
+            # Bytes per second
+            fig = px.box(df, x='status', y='bytes_per_sec',
+                        title='Bytes per Second by Traffic Type',
+                        color='status',
+                        color_discrete_map={'BENIGN': '#2ecc71', 'ATTACK': '#e74c3c'})
+            st.plotly_chart(fig, use_container_width=True)
+        
+        # Key detection features from current data
+        st.subheader(" Current Upload - Key Detection Features")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            # Incomplete requests
+            fig = px.histogram(df, x='incomplete_requests', color='status',
+                             title='Incomplete HTTP Requests',
+                             color_discrete_map={'BENIGN': '#2ecc71', 'ATTACK': '#e74c3c'})
+            st.plotly_chart(fig, use_container_width=True)
+        
+        with col2:
+            # Keep-alive count
+            fig = px.histogram(df, x='keepalive_count', color='status',
+                             title='Keep-Alive Count',
+                             color_discrete_map={'BENIGN': '#2ecc71', 'ATTACK': '#e74c3c'})
+            st.plotly_chart(fig, use_container_width=True)
+        
+        # Additional real-time analytics
+        st.subheader(" Current Upload - Advanced Analytics")
+        
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            # Packet rate analysis
+            fig = px.scatter(df, x='packets_per_sec', y='bytes_per_sec', color='status',
+                           title='Packet Rate vs Byte Rate',
+                           color_discrete_map={'BENIGN': '#2ecc71', 'ATTACK': '#e74c3c'})
+            fig.update_layout(height=350)
+            st.plotly_chart(fig, use_container_width=True)
+        
+        with col2:
+            # Inter-arrival time
+            fig = px.histogram(df, x='avg_inter_arrival', color='status',
+                             title='Average Inter-Arrival Time',
+                             color_discrete_map={'BENIGN': '#2ecc71', 'ATTACK': '#e74c3c'})
+            fig.update_layout(height=350)
+            st.plotly_chart(fig, use_container_width=True)
+        
+        with col3:
+            # Window size analysis
+            fig = px.box(df, x='status', y='avg_window',
+                        title='TCP Window Size by Traffic Type',
+                        color='status',
+                        color_discrete_map={'BENIGN': '#2ecc71', 'ATTACK': '#e74c3c'})
+            fig.update_layout(height=350)
+            st.plotly_chart(fig, use_container_width=True)
+        
+        # Statistics summary
+        st.subheader(" Current Upload - Statistical Summary")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.write("**Benign Traffic Statistics:**")
+            benign_df = df[df['status'] == 'BENIGN']
+            if len(benign_df) > 0:
+                st.write(f"- Average duration: {benign_df['duration'].mean():.2f}s")
+                st.write(f"- Average packet rate: {benign_df['packets_per_sec'].mean():.1f} pkt/s")
+                st.write(f"- Average byte rate: {benign_df['bytes_per_sec'].mean():.0f} B/s")
+                st.write(f"- Average confidence: {benign_df['confidence'].mean():.3f}")
+            else:
+                st.write("No benign traffic detected")
+        
+        with col2:
+            st.write("**Attack Traffic Statistics:**")
+            attack_df = df[df['status'] == 'ATTACK']
+            if len(attack_df) > 0:
+                st.write(f"- Average duration: {attack_df['duration'].mean():.2f}s")
+                st.write(f"- Average packet rate: {attack_df['packets_per_sec'].mean():.1f} pkt/s")
+                st.write(f"- Average byte rate: {attack_df['bytes_per_sec'].mean():.0f} B/s")
+                st.write(f"- Average confidence: {attack_df['confidence'].mean():.3f}")
+            else:
+                st.write("No attack traffic detected")
     
-    if detection_files:
-        st.success(f"Found {len(detection_files)} detection reports")
+    else:
+        # Fallback to historical data if no current upload
+        st.info("📊 No current upload - Showing historical analytics")
         
-        # Load latest
-        latest_file = sorted(detection_files)[-1]
-        df = pd.read_csv(f'results/{latest_file}')
+        # Check for saved detections
+        detection_files = [f for f in os.listdir('results') if f.startswith('detection_')]
         
-        st.subheader(" Traffic Patterns")
+        if detection_files:
+            st.success(f"Found {len(detection_files)} historical detection reports")
+            
+            # Load latest
+            latest_file = sorted(detection_files)[-1]
+            df = pd.read_csv(f'results/{latest_file}')
+            
+            st.subheader(" Historical Traffic Patterns")
         
         # Time series if available
         col1, col2 = st.columns(2)
