@@ -1,0 +1,17 @@
+{
+  "best_model": "Random Forest",
+  "timestamp": "2025-10-31T14:49:29.553856",
+  "metrics": {
+    "accuracy": 1.0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1_score": 1.0,
+    "roc_auc": 1.0
+  },
+  "confusion_matrix": {
+    "true_negatives": 30,
+    "false_positives": 0,
+    "false_negatives": 0,
+    "true_positives": 30
+  }
+}

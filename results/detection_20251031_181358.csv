@@ -1,0 +1,4 @@
+src_ip,dst_ip,total_packets,duration,avg_inter_arrival,std_inter_arrival,max_inter_arrival,total_payload,avg_payload,std_payload,min_payload,max_payload,zero_payload_ratio,syn_count,ack_count,fin_count,rst_count,push_count,incomplete_requests,keepalive_count,packets_per_sec,bytes_per_sec,avg_window,std_window,min_window,conn_established,conn_closed,long_lived,src_port,dst_port,prediction,confidence,status
+185.125.190.97,192.168.87.19,1,0.1,0.1,0,0.1,100,100,50,0,200,0.1,1,1,0,0,0,0,0,10.0,1000.0,65535,1000,60000,1,0,0,0,80,0,0.39,BENIGN
+192.168.87.13,192.168.87.17,1699,169.9,0.1,0,0.1,169900,100,50,0,200,0.1,1,1699,0,0,849,0,0,10.0,1000.0,65535,1000,60000,1,0,1,0,80,0,0.021666666666666664,BENIGN
+192.168.87.19,185.125.190.97,1,0.1,0.1,0,0.1,100,100,50,0,200,0.1,1,1,0,0,0,0,0,10.0,1000.0,65535,1000,60000,1,0,0,0,80,0,0.39,BENIGN

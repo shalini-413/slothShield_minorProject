@@ -1,0 +1,44 @@
+# Large data files
+data/*.pcap
+data/*.csv
+data/uploads/
+
+# Documentation folder (use README.md instead)
+docs/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Environment
+venv/
+env/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+
+# Batch files (Windows specific)
+*.bat
+
+# Test files
+test_*.py
+fix_*.py
+check_*.py

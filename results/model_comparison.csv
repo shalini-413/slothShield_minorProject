@@ -1,0 +1,5 @@
+,Accuracy,Precision,Recall,F1-Score,AUC
+Random Forest,1.000,1.000,1.000,1.000,1.000
+SVM,1.000,1.000,1.000,1.000,1.000
+Logistic Regression,1.000,1.000,1.000,1.000,1.000
+KNN,1.000,1.000,1.000,1.000,1.000

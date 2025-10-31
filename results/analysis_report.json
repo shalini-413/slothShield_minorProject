@@ -1,0 +1,14 @@
+{
+  "timestamp": "2025-10-31T00:41:19.984621",
+  "dataset": {
+    "connections": 144,
+    "malicious": 23,
+    "benign": 121
+  },
+  "best_model": "XGBoost",
+  "metrics": {
+    "f1_score": 1.0,
+    "accuracy": 1.0,
+    "recall": 1.0
+  }
+}
