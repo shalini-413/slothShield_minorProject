@@ -1229,3 +1229,4 @@ st.markdown("""
     <p> SlothShield v1.0 | Powered by Machine Learning |  2025</p>
 </div>
 """, unsafe_allow_html=True)
+
